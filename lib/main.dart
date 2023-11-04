@@ -16,156 +16,194 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class ERDPage extends StatelessWidget {
+class ERDPage extends StatefulWidget {
+  @override
+  _ERDPageState createState() => _ERDPageState();
+}
+
+class _ERDPageState extends State<ERDPage> {
+  List<TableWidget> tables = [];
+  int tableCounter = 0;
+  List<Offset> tablePositions = [];
+  TextEditingController tableNameController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: TableWidget(
-        tableName: "User",
-        columns: [
-          ColumnWidget(
-            columnName: "id",
-            columnType: "uuid",
-            primaryKey: true,
-            autoIncrement: true,
-            nullable: false,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: tableNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Enter Table Name',
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (tableNameController.text.isNotEmpty) {
+                    addTable(tableNameController.text);
+                    tableNameController.clear();
+                  }
+                },
+                child: Text('Add Table'),
+              ),
+            ],
           ),
-          ColumnWidget(
-            columnName: "username",
-            columnType: "varchar",
-            primaryKey: false,
-            autoIncrement: false,
-            nullable: false,
-          ),
-          ColumnWidget(
-            columnName: "password",
-            columnType: "text",
-            primaryKey: false,
-            autoIncrement: false,
-            nullable: false,
-          ),
-          ColumnWidget(
-            columnName: "email",
-            columnType: "varchar",
-            primaryKey: false,
-            autoIncrement: false,
-            nullable: true,
+          SizedBox(height: 20),
+          Expanded(
+            child: Stack(
+              children: [
+                for (int i = 0; i < tables.length; i++)
+                  Positioned(
+                    left: tablePositions[i].dx,
+                    top: tablePositions[i].dy,
+                    child: DraggableTableWidget(
+                      table: tables[i],
+                      onDragEnd: (Offset offset) {
+                        saveTablePosition(i, offset);
+                      },
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
+  void addTable(String tableName) {
+    setState(() {
+      tableCounter++;
+      tables.add(
+        TableWidget(
+          tableName: tableName,
+          columns: [
+            ColumnWidget(
+              columnName: "id",
+              columnType: "uuid",
+              primaryKey: true,
+              autoIncrement: true,
+              nullable: false,
+            ),
+            ColumnWidget(
+              columnName: "column1",
+              columnType: "varchar",
+              primaryKey: false,
+              autoIncrement: false,
+              nullable: false,
+            ),
+            ColumnWidget(
+              columnName: "column2",
+              columnType: "text",
+              primaryKey: false,
+              autoIncrement: false,
+              nullable: false,
+            ),
+          ],
+        ),
+      );
+      tablePositions.add(Offset(0, 0));
+    });
+  }
+
+  void saveTablePosition(int index, Offset offset) {
+    setState(() {
+      tablePositions[index] = offset;
+    });
+  }
 }
 
-class TableWidget extends StatefulWidget {
+class DraggableTableWidget extends StatelessWidget {
+  final TableWidget table;
+  final ValueChanged<Offset> onDragEnd;
+
+  DraggableTableWidget({
+    required this.table,
+    required this.onDragEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Draggable(
+      feedback: Card(
+        child: Container(
+          width: table.maxWidth,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue, width: 2.0),
+            borderRadius: BorderRadius.circular(5.0),
+          ),
+          child: IntrinsicHeight(
+            child: Column(
+              children: [
+                Text(
+                  table.tableName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                Divider(color: Colors.blue),
+                SingleChildScrollView(
+                  child: Column(
+                    children: table.columns,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      childWhenDragging: Container(),
+      child: Card(
+        child: Container(
+          width: table.maxWidth,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue, width: 2.0),
+            borderRadius: BorderRadius.circular(5.0),
+          ),
+          child: IntrinsicHeight(
+            child: Column(
+              children: [
+                Text(
+                  table.tableName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                Divider(color: Colors.blue),
+                SingleChildScrollView(
+                  child: Column(
+                    children: table.columns,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      onDraggableCanceled: (Velocity velocity, Offset offset) {
+        onDragEnd(offset);
+      },
+    );
+  }
+}
+
+class TableWidget {
   final String tableName;
   final List<ColumnWidget> columns;
+  double maxWidth = 150.0;
+  double maxHeight = 300;
 
   TableWidget({
     required this.tableName,
     required this.columns,
   });
-
-  @override
-  _TableWidgetState createState() => _TableWidgetState();
-}
-
-class _TableWidgetState extends State<TableWidget> {
-  Offset position = Offset(0, 0);
-  double maxWidth=0;
-  double maxHeight=0;
-
-  @override
-  void initState() {
-    super.initState();
-    maxWidth = 150.0; // Set your desired max width
-    maxHeight = 300; // Initial max height
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          left: position.dx,
-          top: position.dy,
-          child: Draggable(
-            feedback: Card(
-              // Wrap the content with a Card
-              child: Container(
-                width: maxWidth,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue, width: 2.0),
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      Text(
-                        widget.tableName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Divider(color: Colors.blue),
-                      // Use a Column with SingleChildScrollView
-                      SingleChildScrollView(
-                        child: Column(
-                          children: widget.columns,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            childWhenDragging: Container(),
-            child: Card(
-              // Wrap the content with a Card
-              child: Container(
-                width: maxWidth,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue, width: 2.0),
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      Text(
-                        widget.tableName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Divider(color: Colors.blue),
-                      // Use a Column with SingleChildScrollView
-                      SingleChildScrollView(
-                        child: Column(
-                          children: widget.columns,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            onDraggableCanceled: (Velocity velocity, Offset offset) {
-              setState(() {
-                position = Offset(
-                  offset.dx
-                      .clamp(0.0, MediaQuery.of(context).size.width - maxWidth),
-                  offset.dy.clamp(
-                      0.0, MediaQuery.of(context).size.height - maxHeight),
-                );
-              });
-            },
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 class ColumnWidget extends StatelessWidget {
