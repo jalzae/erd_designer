@@ -17,24 +17,9 @@ class ColumnWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black),
-        borderRadius: BorderRadius.circular(5.0),
-        color: Colors.white,
-      ),
-      padding: EdgeInsets.all(8.0),
-      margin: EdgeInsets.all(4.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(columnName),
-          Text("Type: $columnType"),
-          if (primaryKey) Text("Primary Key"),
-          if (autoIncrement) Text("Auto Increment"),
-          if (nullable) Text("Nullable"),
-        ],
-      ),
+    return ListTile(
+      title: Text(columnName),
+      subtitle: Text(columnType),
     );
   }
 }
